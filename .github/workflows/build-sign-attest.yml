@@ -95,17 +95,26 @@ jobs:
           output-file: sbom.spdx.json
           upload-artifact: false
 
+      # Only what admission control checks goes to the registry. Every bundle
+      # there is downloaded on every admission check, and the SBOM alone is ~1 MB,
+      # so the SBOM and VEX stay in GitHub's attestation store
+      # (gh attestation verify --predicate-type ...).
       - name: Attest SBOM
-        env:
-          DIGEST: ${{ steps.push.outputs.digest }}
-        run: cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE}@${DIGEST}"
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ inputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: sbom.spdx.json
 
       # VEX statements live in the caller repository and reach main through review.
       - name: Attest VEX
         if: hashFiles('vex/openvex.json') != ''
-        env:
-          DIGEST: ${{ steps.push.outputs.digest }}
-        run: cosign attest --yes --type openvex --predicate vex/openvex.json "${IMAGE}@${DIGEST}"
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ inputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          predicate-type: https://openvex.dev/ns
+          predicate-path: vex/openvex.json
 
       - name: Attest SLSA provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2

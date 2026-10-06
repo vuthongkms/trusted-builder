@@ -3,7 +3,7 @@
 Reusable GitHub Actions workflow used by the "Signed Isn't Enough" demo. It builds a container image from the calling repository, then:
 
 1. pushes it to GHCR and signs it keyless with Cosign v3,
-2. attaches an SPDX SBOM and, if the caller has `vex/openvex.json`, an OpenVEX document,
+2. records an SPDX SBOM and, if the caller has `vex/openvex.json`, an OpenVEX document in GitHub's attestation store (not the registry, to keep admission checks fast),
 3. attaches SLSA v1 provenance with `actions/attest`.
 
 Because the build and every signature happen inside this workflow, a caller cannot tamper with how its image is built or signed (SLSA Build L3). All signatures carry this workflow's identity:
